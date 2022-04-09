@@ -1,0 +1,10 @@
+# GitLab CI configuration
+# see https://docs.gitlab.com/ce/ci/yaml/index.html
+default:
+  image: debian:stable
+
+make-check:
+  stage: test
+  script:
+    - ./install-prereqs.sh
+    - make check

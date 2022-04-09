@@ -1,0 +1,5 @@
+*~
+*.swp
+venv-burndown
+.coverage
+*__pycache__*

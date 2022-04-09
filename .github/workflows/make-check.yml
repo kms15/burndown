@@ -1,0 +1,9 @@
+name: make-check
+on: [push]
+jobs:
+  make-check-job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: podman run -v .:/app -it --rm debian:stable /bin/bash -c
+          "cd app && ./install-prereqs.sh && make check"
