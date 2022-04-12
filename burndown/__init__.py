@@ -62,8 +62,12 @@ def without_tag(df, tag):
     return df.loc[~df["notes"].str.contains("#" + tag + "\\b", regex=True)]
 
 
-def burnup_plot(
-    df, category_tags, stackplot_func=matplotlib.pyplot.stackplot, **kwargs
+def burndown_plot(
+    df,
+    category_tags,
+    burnup=False,
+    stackplot_func=matplotlib.pyplot.stackplot,
+    **kwargs,
 ):
     completed_ts = burndown_timeseries(df["completed"], points=df["points"])
 
@@ -98,9 +102,14 @@ def burnup_plot(
         "darkorchid",
     ]
 
+    # remove extra burnup data for a standard burndown plot
+    if not burnup:
+        df_result.drop("completed", inplace=True, axis=1)
+        colors = colors[1:]
+
     return stackplot_func(
         df_result.index,
-        df_result.values,
+        df_result.to_numpy().transpose(),
         labels=df_result.columns,
         colors=colors,
         **kwargs,

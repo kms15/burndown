@@ -146,7 +146,7 @@ def test_with_and_without_tag():
     assert result.equals(expected)
 
 
-def test_burnup_plot():
+def test_burndown_plot():
 
     points = [1, 2, 3, 5]
     committed = pd.to_datetime(
@@ -181,6 +181,8 @@ def test_burnup_plot():
         }
     )
 
+    # start with the burnup plot version, since that's a superset of the
+    # burndown plot.
     expected_kwargs = {"baz": 3, "foozle": 4}
     expected_x = pd.to_datetime(
         [
@@ -190,14 +192,18 @@ def test_burnup_plot():
             "2022-04-11T12:16Z",
         ]
     )
-    expected_y = pd.DataFrame(
-        {
-            "completed": [0.0, 2.0, 2.0, 3.0],
-            "uncategorized": [1.0, 1.0, 1.0, 0.0],
-            "foo": [2.0, 0.0, 0.0, 0.0],
-            "bar": [0.0, 0.0, 5.0, 5.0],
-        }
-    ).values
+    expected_y = (
+        pd.DataFrame(
+            {
+                "completed": [0.0, 2.0, 2.0, 3.0],
+                "uncategorized": [1.0, 1.0, 1.0, 0.0],
+                "foo": [2.0, 0.0, 0.0, 0.0],
+                "bar": [0.0, 0.0, 5.0, 5.0],
+            }
+        )
+        .to_numpy()
+        .transpose()
+    )
     expected_labels = ["completed", "uncategorized", "foo", "bar"]
     expected_colors = [
         "white",
@@ -223,7 +229,23 @@ def test_burnup_plot():
 
         return "dummy_result"
 
-    assert "dummy_result" == burndown.burnup_plot(
+    assert "dummy_result" == burndown.burndown_plot(
+        tasks,
+        ["foo", "bar"],
+        burnup=True,
+        baz=3,
+        foozle=4,
+        stackplot_func=moc_stackplot,
+    )
+    assert stackplot_called
+
+    # next, check the ordinary burndown case
+    expected_y = expected_y[1:, :]
+    expected_labels = expected_labels[1:]
+    expected_colors = expected_colors[1:]
+
+    stackplot_called = False
+    assert "dummy_result" == burndown.burndown_plot(
         tasks, ["foo", "bar"], baz=3, foozle=4, stackplot_func=moc_stackplot
     )
     assert stackplot_called
