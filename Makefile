@@ -4,6 +4,9 @@ SHELL:=/bin/bash
 check: venv-burndown/bin/activate
 	source venv-burndown/bin/activate && \
 		python3 -m pytest --cov=burndown --doctest-modules
+	source venv-burndown/bin/activate && \
+		python3 -m burndown test/read_test.csv -o .tmp_integration_test.png
+	rm -rf .tmp_integration_test.png
 
 .PHONY: clean
 clean:
