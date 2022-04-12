@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 import numpy as np
 
+
 def test_read_csv():
     csv = burndown.read_csv("test/read_test.csv")
 
@@ -20,12 +21,12 @@ def test_read_csv():
 
     # remaining columns should exist
     assert csv["points"].iloc[1] == 4
-    assert csv["nextstep"].iloc[0] == 'do something'
-    assert csv["notes"].iloc[2] == 'secret notes'
+    assert csv["nextstep"].iloc[0] == "do something"
+    assert csv["notes"].iloc[2] == "secret notes"
 
     # for strings, empty strings should be used instead of "missing"
-    assert csv["notes"].iloc[0] == ''
-    assert csv["nextstep"].iloc[2] == ''
+    assert csv["notes"].iloc[0] == ""
+    assert csv["nextstep"].iloc[2] == ""
 
     # should raise error if creation date does not exist
     with pytest.raises(Exception) as e:
@@ -40,5 +41,189 @@ def test_read_csv():
     with pytest.raises(Exception) as e:
         burndown.read_csv("test/non_numeric_points.csv")
 
-def test_calculate_point_deltas():
-    pass
+
+def test_burndown_timeseries():
+    start_times = pd.to_datetime(
+        pd.Series(
+            [
+                "2022-04-11T12:12Z",
+                "2022-04-11T12:16Z",
+                "",
+                "2022-04-11T12:20Z",
+                "2022-04-11T12:24Z",
+            ]
+        )
+    )
+    end_times = pd.to_datetime(
+        pd.Series(
+            [
+                "2022-04-11T12:17Z",
+                "",
+                "",
+                "2022-04-11T12:29Z",
+                "2022-04-11T12:27Z",
+            ]
+        )
+    )
+    points = pd.Series([2, 3, 33, 7, 11])
+
+    expected = pd.Series(
+        data=[2, 5, 3, 10, 21, 10, 3],
+        index=pd.to_datetime(
+            [
+                "2022-04-11T12:12Z",
+                "2022-04-11T12:16Z",
+                "2022-04-11T12:17Z",
+                "2022-04-11T12:20Z",
+                "2022-04-11T12:24Z",
+                "2022-04-11T12:27Z",
+                "2022-04-11T12:29Z",
+            ]
+        ),
+    )
+
+    # should support passing in three series
+    result = burndown.burndown_timeseries(start_times, end_times, points)
+    assert result.equals(expected)
+
+    # should support passing in a dataframe
+    result = burndown.burndown_timeseries(
+        pd.DataFrame(
+            {"committed": start_times, "completed": end_times, "points": points}
+        )
+    )
+    assert result.equals(expected)
+
+    # should support passing in just start times and points
+    expected = pd.Series(
+        data=[2, 5, 12, 23],
+        index=pd.to_datetime(
+            [
+                "2022-04-11T12:12Z",
+                "2022-04-11T12:16Z",
+                "2022-04-11T12:20Z",
+                "2022-04-11T12:24Z",
+            ]
+        ),
+    )
+    result = burndown.burndown_timeseries(start_times, points=points)
+    assert result.equals(expected)
+
+
+def test_with_and_without_tag():
+    times = pd.to_datetime(
+        [
+            "2022-04-11T12:12Z",
+            "2022-04-11T12:16Z",
+            "2022-04-11T12:17Z",
+            "2022-04-11T12:20Z",
+            "2022-04-11T12:24Z",
+            "2022-04-11T12:27Z",
+            "2022-04-11T12:29Z",
+        ]
+    )
+    points = pd.Series([1, 1, 2, 3, 5, 8, 13])
+    notes = pd.Series(
+        [
+            "#foo",
+            "#foo and then something",
+            "ends with #foo",
+            "no foo here #bar",
+            "a#foo and #bar",
+            "#foozle not foo",
+            "have #foo, will #travel",
+        ]
+    )
+    original = pd.DataFrame({"times": times, "points": points, "notes": notes})
+    has_tag = pd.Series([True, True, True, False, True, False, True])
+
+    result = burndown.with_tag(original, "foo")
+    expected = original.loc[has_tag]
+    assert result.equals(expected)
+
+    result = burndown.without_tag(original, "foo")
+    expected = original.loc[~has_tag]
+    assert result.equals(expected)
+
+
+def test_burnup_plot():
+
+    points = [1, 2, 3, 5]
+    committed = pd.to_datetime(
+        [
+            "2022-04-11T12:12Z",
+            "2022-04-11T12:12Z",
+            "",
+            "2022-04-11T12:14Z",
+        ]
+    )
+    completed = pd.to_datetime(
+        [
+            "2022-04-11T12:16Z",
+            "2022-04-11T12:13Z",
+            "",
+            "",
+        ]
+    )
+    notes = [
+        "no #relevant tags",
+        "#foo #manchu",
+        "unscheduled",
+        "#bar",
+    ]
+
+    tasks = pd.DataFrame(
+        {
+            "committed": committed,
+            "completed": completed,
+            "points": points,
+            "notes": notes,
+        }
+    )
+
+    expected_kwargs = {"baz": 3, "foozle": 4}
+    expected_x = pd.to_datetime(
+        [
+            "2022-04-11T12:12Z",
+            "2022-04-11T12:13Z",
+            "2022-04-11T12:14Z",
+            "2022-04-11T12:16Z",
+        ]
+    )
+    expected_y = pd.DataFrame(
+        {
+            "completed": [0.0, 2.0, 2.0, 3.0],
+            "uncategorized": [1.0, 1.0, 1.0, 0.0],
+            "foo": [2.0, 0.0, 0.0, 0.0],
+            "bar": [0.0, 0.0, 5.0, 5.0],
+        }
+    ).values
+    expected_labels = ["completed", "uncategorized", "foo", "bar"]
+    expected_colors = [
+        "white",
+        "silver",
+        "coral",
+        "goldenrod",
+        "forestgreen",
+        "cornflowerblue",
+        "darkorchid",
+    ]
+
+    stackplot_called = False
+
+    def moc_stackplot(x, y, *args, labels, colors, **kwargs):
+        nonlocal stackplot_called
+        stackplot_called = True
+
+        assert expected_x.equals(x)
+        assert np.array_equal(expected_y, y)
+        assert np.array_equal(labels, expected_labels)
+        assert np.array_equal(colors, expected_colors)
+        assert kwargs == expected_kwargs
+
+        return "dummy_result"
+
+    assert "dummy_result" == burndown.burnup_plot(
+        tasks, ["foo", "bar"], baz=3, foozle=4, stackplot_func=moc_stackplot
+    )
+    assert stackplot_called
