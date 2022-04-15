@@ -11,7 +11,7 @@ def read_csv(filename: str):
     # convert datecols to np.datetime64 values, forcing errors if failed
     datecols = ["created", "committed", "completed"]
     for col in datecols:
-        result[col] = pd.to_datetime(result[col])
+        result[col] = pd.to_datetime(result[col], utc=True)
 
     # fill missing notes and nextsteps with blanks
     result.fillna(
@@ -46,7 +46,7 @@ def burndown_timeseries(credit_times_or_df, debit_times=None, points=None):
         credit_times = credit_times_or_df
         # if debit_times is None, assume that there are no debits
         if debit_times is None:
-            debit_times = pd.to_datetime([""] * len(points))
+            debit_times = pd.to_datetime([""] * len(points), utc=True)
 
     credits = points[credit_times.notna()].set_axis(credit_times.dropna())
     debits = (-1 * points[debit_times.notna()]).set_axis(debit_times.dropna())
