@@ -148,13 +148,14 @@ def test_with_and_without_tag():
 
 def test_burndown_plot():
 
-    points = [1, 2, 3, 5]
+    points = [1, 2, 3, 5, 11]
     committed = pd.to_datetime(
         [
             "2022-04-11T12:12Z",
             "2022-04-11T12:12Z",
             "",
             "2022-04-11T12:14Z",
+            "2022-04-11T12:15Z",
         ]
     )
     completed = pd.to_datetime(
@@ -163,6 +164,7 @@ def test_burndown_plot():
             "2022-04-11T12:13Z",
             "",
             "",
+            "2022-04-11T12:17Z",
         ]
     )
     notes = [
@@ -170,6 +172,7 @@ def test_burndown_plot():
         "#foo #manchu",
         "unscheduled",
         "#bar",
+        "#bar #triaged",
     ]
 
     tasks = pd.DataFrame(
@@ -189,16 +192,18 @@ def test_burndown_plot():
             "2022-04-11T12:12Z",
             "2022-04-11T12:13Z",
             "2022-04-11T12:14Z",
+            "2022-04-11T12:15Z",
             "2022-04-11T12:16Z",
+            "2022-04-11T12:17Z",
         ]
     )
     expected_y = (
         pd.DataFrame(
             {
-                "completed": [0.0, 2.0, 2.0, 3.0],
-                "uncategorized": [1.0, 1.0, 1.0, 0.0],
-                "foo": [2.0, 0.0, 0.0, 0.0],
-                "bar": [0.0, 0.0, 5.0, 5.0],
+                "completed": [0.0, 2.0, 2.0, 2.0, 3.0, 3.0],
+                "uncategorized": [1.0, 1.0, 1.0, 1.0, 0.0, 0.0],
+                "foo": [2.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                "bar": [0.0, 0.0, 5.0, 16.0, 16.0, 5.0],
             }
         )
         .to_numpy()

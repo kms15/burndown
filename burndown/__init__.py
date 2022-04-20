@@ -69,7 +69,10 @@ def burndown_plot(
     stackplot_func=matplotlib.pyplot.stackplot,
     **kwargs,
 ):
-    completed_ts = burndown_timeseries(df["completed"], points=df["points"])
+    without_triaged_df = without_tag(df, "triaged")
+    completed_ts = burndown_timeseries(
+        without_triaged_df["completed"], points=without_triaged_df["points"]
+    )
 
     # start by treating everything as uncategorized
     uncategorized_ts = burndown_timeseries(df)
