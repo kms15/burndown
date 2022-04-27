@@ -69,6 +69,12 @@ def burndown_plot(
     stackplot_func=matplotlib.pyplot.stackplot,
     **kwargs,
 ):
+    # Make the times unique by adding the row number to the nanoseconds
+    # (needed to avoid errors from pandas about duplicate indexes)
+    df = df.copy()
+    for j, colname in enumerate(["committed", "completed"]):
+        df[colname] += pd.Series([pd.Timedelta(i + j * df.shape[0]) for i in df.index])
+
     without_triaged_df = without_tag(df, "triaged")
     completed_ts = burndown_timeseries(
         without_triaged_df["completed"], points=without_triaged_df["points"]
@@ -87,6 +93,13 @@ def burndown_plot(
 
     # fill in nulls
     df_result = df_result.fillna(method="ffill").fillna(0)
+
+    # round to the nearest second (to remove nanoseconds added to create unique times)
+    df_result.set_index(
+        df_result.index
+        - pd.Series([pd.Timedelta(ns) for ns in df_result.index.nanosecond]),
+        inplace=True,
+    )
 
     # use the most recent result for duplicate times
     df_result = df_result.reset_index().groupby("index").last()
