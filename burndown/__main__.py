@@ -34,4 +34,5 @@ if True:  # pragma: no cover
     # plot the figure
     fig = plt.figure(figsize=(10, 5))
     burndown.burndown_plot(tasks, categories, burnup=args["--burnup"])
+    plt.legend()
     plt.savefig(args["--output"], bbox_inches="tight")
