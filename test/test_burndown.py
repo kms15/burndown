@@ -184,7 +184,8 @@ def test_burndown_plot():
             "completed": completed,
             "points": points,
             "notes": notes,
-        }
+        },
+        index=[1,2,4,5,1,2]
     )
 
     # start with the burnup plot version, since that's a superset of the

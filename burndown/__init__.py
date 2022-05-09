@@ -71,7 +71,7 @@ def burndown_plot(
 ):
     # Make the times unique by adding the row number to the nanoseconds
     # (needed to avoid errors from pandas about duplicate indexes)
-    df = df.copy()
+    df = df.reset_index()
     for j, colname in enumerate(["committed", "completed"]):
         df[colname] += pd.Series([pd.Timedelta(i + j * df.shape[0]) for i in df.index])
 
