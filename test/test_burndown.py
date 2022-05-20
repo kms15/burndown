@@ -217,13 +217,13 @@ def test_burndown_plot():
     expected_colors = [
         "white",
         "silver",
+        "indianred",
         "coral",
         "goldenrod",
         "forestgreen",
+        "darkcyan",
         "cornflowerblue",
         "darkorchid",
-        "darkcyan",
-        "deeppink"
     ]
 
     stackplot_called = False
