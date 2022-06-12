@@ -114,10 +114,12 @@ def burndown_plot(
         "indianred",
         "coral",
         "goldenrod",
+        "yellowgreen",
         "forestgreen",
         "darkcyan",
         "cornflowerblue",
-        "darkorchid",
+        "blueviolet",
+        "orchid",
     ]
 
     # remove extra burnup data for a standard burndown plot

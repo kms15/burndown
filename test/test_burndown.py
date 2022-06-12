@@ -220,10 +220,12 @@ def test_burndown_plot():
         "indianred",
         "coral",
         "goldenrod",
+        "yellowgreen",
         "forestgreen",
         "darkcyan",
         "cornflowerblue",
-        "darkorchid",
+        "blueviolet",
+        "orchid",
     ]
 
     stackplot_called = False
