@@ -3,7 +3,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot
-
+from scipy.interpolate import interp1d
 
 def read_csv(filename: str):
     result = pd.read_csv(filename, dtype={"points": float})
@@ -134,3 +134,20 @@ def burndown_plot(
         colors=colors,
         **kwargs,
     )
+
+def get_spanning_days(dts):
+    return pd.date_range(start=dts.min().normalize(),
+        end=dts.max() + pd.to_timedelta('1D'),
+        freq='D')
+
+def is_weekday(dts):
+    return dts.day_of_week < 5
+
+def get_time_scaler(spanning_days, is_workday, non_workday_value=1/16):
+    y = np.cumsum([0] + [
+        (1 if workday else non_workday_value)
+        for workday in is_workday[:-1]])
+    x = spanning_days.to_julian_date()
+    f = interp1d(x, y)
+
+    return lambda dts: f(dts.to_julian_date())

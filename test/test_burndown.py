@@ -262,3 +262,70 @@ def test_burndown_plot():
         tasks, ["foo", "bar"], baz=3, foozle=4, stackplot_func=moc_stackplot
     )
     assert stackplot_called
+
+def test_get_spanning_days():
+    result = burndown.get_spanning_days(pd.to_datetime([
+            "2022-04-12T08:00Z",
+            "2022-04-13T11:00Z",
+            "2022-04-15T13:00Z",
+            "2022-04-16T13:00Z",
+        ]))
+
+    assert result.to_list() == pd.to_datetime([
+            "2022-04-12T00:00Z",
+            "2022-04-13T00:00Z",
+            "2022-04-14T00:00Z",
+            "2022-04-15T00:00Z",
+            "2022-04-16T00:00Z",
+            "2022-04-17T00:00Z",
+        ]).to_list()
+
+def test_is_weekday():
+    result = burndown.is_weekday(pd.to_datetime([
+            "2022-06-14T00:00Z",
+            "2022-06-15T00:00Z",
+            "2022-06-16T00:00Z",
+            "2022-06-17T00:00Z",
+            "2022-06-18T00:00Z",
+            "2022-06-19T00:00Z",
+            "2022-06-20T00:00Z",
+            "2022-06-21T00:00Z",
+        ]))
+    assert list(result) == [
+        True,
+        True,
+        True,
+        True,
+        False,
+        False,
+        True,
+        True,
+        ]
+
+def test_get_time_scaler():
+    spanning_days = pd.to_datetime([
+            "2022-06-14T00:00Z",
+            "2022-06-15T00:00Z",
+            "2022-06-16T00:00Z",
+            "2022-06-17T00:00Z",
+            "2022-06-18T00:00Z",
+            "2022-06-19T00:00Z",
+        ])
+    is_workday = [
+        True,
+        False,
+        False,
+        True,
+        True,
+        False,
+        ]
+
+    time_scaler = burndown.get_time_scaler(spanning_days, is_workday, 1/16)
+
+    assert list(time_scaler(spanning_days)) == [
+        0, 1., 1 + 1/16, 1 + 2/16, 2 + 2/16, 3 + 2/16 ]
+    assert list(time_scaler(pd.to_datetime([
+            "2022-06-14T12:00Z",
+            "2022-06-15T12:00Z",
+            "2022-06-16T12:00Z",
+        ]))) == [ 0.5, 1 + 1/32, 1 + 3/32 ]
