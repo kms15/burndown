@@ -62,13 +62,12 @@ def without_tag(df, tag):
     return df.loc[~df["notes"].str.contains("#" + tag + "\\b", regex=True)]
 
 
-def burndown_plot(
+def prepare_stackplot_df(
     df,
     category_tags,
     burnup=False,
-    stackplot_func=matplotlib.pyplot.stackplot,
-    **kwargs,
 ):
+
     # Make the times unique by adding the row number to the nanoseconds
     # (needed to avoid errors from pandas about duplicate indexes)
     df = df.reset_index()
@@ -108,8 +107,24 @@ def burndown_plot(
     for tag in category_tags:
         df_result["uncategorized"] -= df_result[tag]
 
+    if not burnup:
+        df_result.drop("completed", inplace=True, axis=1)
+
+    return df_result
+
+
+def burndown_plot(
+    df,
+    category_tags,
+    burnup=False,
+    stackplot_function=matplotlib.pyplot.stackplot,
+    prepare_df_function=prepare_stackplot_df,
+    **kwargs,
+):
+
+    df_result = prepare_df_function(df, category_tags, burnup)
+
     colors = [
-        "white",
         "silver",
         "indianred",
         "coral",
@@ -122,18 +137,18 @@ def burndown_plot(
         "orchid",
     ]
 
-    # remove extra burnup data for a standard burndown plot
-    if not burnup:
-        df_result.drop("completed", inplace=True, axis=1)
-        colors = colors[1:]
+    # show "completed" data as transparent
+    if burnup:
+        colors.insert(0, (0,0,0,0))
 
-    return stackplot_func(
+    return stackplot_function(
         df_result.index,
-        df_result.to_numpy().transpose(),
+        df_result.transpose(),
         labels=df_result.columns,
         colors=colors,
         **kwargs,
     )
+
 
 def get_spanning_days(dts):
     return pd.date_range(start=dts.min().normalize(),

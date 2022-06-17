@@ -146,7 +146,7 @@ def test_with_and_without_tag():
     assert result.equals(expected)
 
 
-def test_burndown_plot():
+def test_prepare_stackplot_df():
 
     points = [1, 2, 3, 5, 7, 11]
     committed = pd.to_datetime(
@@ -188,34 +188,58 @@ def test_burndown_plot():
         index=[1,2,4,5,1,2]
     )
 
-    # start with the burnup plot version, since that's a superset of the
-    # burndown plot.
-    expected_kwargs = {"baz": 3, "foozle": 4}
-    expected_x = pd.to_datetime(
-        [
-            "2022-04-11T12:12Z",
-            "2022-04-11T12:13Z",
-            "2022-04-11T12:14Z",
-            "2022-04-11T12:15Z",
-            "2022-04-11T12:16Z",
-            "2022-04-11T12:17Z",
-        ]
-    )
-    expected_y = (
-        pd.DataFrame(
+    expected_df = pd.DataFrame(
             {
                 "completed": [0.0, 2.0, 2.0, 2.0, 10.0, 10.0],
                 "uncategorized": [1.0, 1.0, 1.0, 1.0, 0.0, 0.0],
                 "foo": [2.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                 "bar": [0.0, 0.0, 12.0, 23.0, 16.0, 5.0],
-            }
+            },
+            index = pd.to_datetime([
+                "2022-04-11T12:12Z",
+                "2022-04-11T12:13Z",
+                "2022-04-11T12:14Z",
+                "2022-04-11T12:15Z",
+                "2022-04-11T12:16Z",
+                "2022-04-11T12:17Z",
+            ])
         )
-        .to_numpy()
-        .transpose()
+
+    # start with the burnup plot version, since that's a superset of the
+    # burndown plot.
+    result_df = burndown.prepare_stackplot_df(
+        tasks,
+        ["foo", "bar"],
+        burnup=True,
     )
-    expected_labels = ["completed", "uncategorized", "foo", "bar"]
+    assert result_df.equals(expected_df)
+
+    # next, check the ordinary burndown case
+    #expected_y = expected_y[1:, :]
+    #expected_labels = expected_labels[1:]
+    #expected_colors = expected_colors[1:]
+
+    #stackplot_called = False
+    #assert "dummy_result" == burndown.burndown_plot(
+    #    tasks, ["foo", "bar"], baz=3, foozle=4, stackplot_func=moc_stackplot
+    #)
+    #assert stackplot_called
+
+
+def test_burndown_plot():
+
+    # start with the burnup plot version, since that's a superset of the
+    burnup_expected = True
+
+    dummy_df = pd.DataFrame({"completed":[1,2], "x":[3,4], "y":[5,6]}, index=[7,8])
+
+    # burndown plot.
+    expected_kwargs = {"baz": 3, "foozle": 4}
+    expected_x = dummy_df.index
+    expected_y = dummy_df.transpose()
+    expected_labels = dummy_df.columns
     expected_colors = [
-        "white",
+        (0,0,0,0),
         "silver",
         "indianred",
         "coral",
@@ -237,29 +261,40 @@ def test_burndown_plot():
         assert expected_x.equals(x)
         assert np.array_equal(expected_y, y)
         assert np.array_equal(labels, expected_labels)
-        assert np.array_equal(colors, expected_colors)
+        assert colors == expected_colors
         assert kwargs == expected_kwargs
 
         return "dummy_result"
 
+    def moc_prepare_df(
+        df,
+        category_tags,
+        burnup=False,
+        ):
+        assert df == "dummy"
+        assert category_tags == ["foo", "bar"]
+        assert burnup == burnup_expected
+        return dummy_df
+
     assert "dummy_result" == burndown.burndown_plot(
-        tasks,
+        "dummy",
         ["foo", "bar"],
-        burnup=True,
+        burnup=burnup_expected,
         baz=3,
         foozle=4,
-        stackplot_func=moc_stackplot,
+        stackplot_function=moc_stackplot,
+        prepare_df_function=moc_prepare_df
     )
     assert stackplot_called
 
     # next, check the ordinary burndown case
-    expected_y = expected_y[1:, :]
-    expected_labels = expected_labels[1:]
+    burnup_expected = False
     expected_colors = expected_colors[1:]
 
     stackplot_called = False
     assert "dummy_result" == burndown.burndown_plot(
-        tasks, ["foo", "bar"], baz=3, foozle=4, stackplot_func=moc_stackplot
+        "dummy", ["foo", "bar"], baz=3, foozle=4, stackplot_function=moc_stackplot,
+        prepare_df_function=moc_prepare_df
     )
     assert stackplot_called
 
