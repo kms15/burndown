@@ -185,25 +185,27 @@ def test_prepare_stackplot_df():
             "points": points,
             "notes": notes,
         },
-        index=[1,2,4,5,1,2]
+        index=[1, 2, 4, 5, 1, 2],
     )
 
     expected_df = pd.DataFrame(
-            {
-                "completed": [0.0, 2.0, 2.0, 2.0, 10.0, 10.0],
-                "uncategorized": [1.0, 1.0, 1.0, 1.0, 0.0, 0.0],
-                "foo": [2.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                "bar": [0.0, 0.0, 12.0, 23.0, 16.0, 5.0],
-            },
-            index = pd.to_datetime([
+        {
+            "completed": [0.0, 2.0, 2.0, 2.0, 10.0, 10.0],
+            "uncategorized": [1.0, 1.0, 1.0, 1.0, 0.0, 0.0],
+            "foo": [2.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "bar": [0.0, 0.0, 12.0, 23.0, 16.0, 5.0],
+        },
+        index=pd.to_datetime(
+            [
                 "2022-04-11T12:12Z",
                 "2022-04-11T12:13Z",
                 "2022-04-11T12:14Z",
                 "2022-04-11T12:15Z",
                 "2022-04-11T12:16Z",
                 "2022-04-11T12:17Z",
-            ])
-        )
+            ]
+        ),
+    )
 
     # start with the burnup plot version, since that's a superset of the
     # burndown plot.
@@ -215,15 +217,15 @@ def test_prepare_stackplot_df():
     assert result_df.equals(expected_df)
 
     # next, check the ordinary burndown case
-    #expected_y = expected_y[1:, :]
-    #expected_labels = expected_labels[1:]
-    #expected_colors = expected_colors[1:]
+    # expected_y = expected_y[1:, :]
+    # expected_labels = expected_labels[1:]
+    # expected_colors = expected_colors[1:]
 
-    #stackplot_called = False
-    #assert "dummy_result" == burndown.burndown_plot(
+    # stackplot_called = False
+    # assert "dummy_result" == burndown.burndown_plot(
     #    tasks, ["foo", "bar"], baz=3, foozle=4, stackplot_func=moc_stackplot
-    #)
-    #assert stackplot_called
+    # )
+    # assert stackplot_called
 
 
 def test_burndown_plot():
@@ -231,7 +233,9 @@ def test_burndown_plot():
     # start with the burnup plot version, since that's a superset of the
     burnup_expected = True
 
-    dummy_df = pd.DataFrame({"completed":[1,2], "x":[3,4], "y":[5,6]}, index=[7,8])
+    dummy_df = pd.DataFrame(
+        {"completed": [1, 2], "x": [3, 4], "y": [5, 6]}, index=[7, 8]
+    )
 
     # burndown plot.
     expected_kwargs = {"baz": 3, "foozle": 4}
@@ -239,7 +243,7 @@ def test_burndown_plot():
     expected_y = dummy_df.transpose()
     expected_labels = dummy_df.columns
     expected_colors = [
-        (0,0,0,0),
+        (0, 0, 0, 0),
         "silver",
         "indianred",
         "coral",
@@ -270,7 +274,7 @@ def test_burndown_plot():
         df,
         category_tags,
         burnup=False,
-        ):
+    ):
         assert df == "dummy"
         assert category_tags == ["foo", "bar"]
         assert burnup == burnup_expected
@@ -283,7 +287,7 @@ def test_burndown_plot():
         baz=3,
         foozle=4,
         stackplot_function=moc_stackplot,
-        prepare_df_function=moc_prepare_df
+        prepare_df_function=moc_prepare_df,
     )
     assert stackplot_called
 
@@ -293,39 +297,58 @@ def test_burndown_plot():
 
     stackplot_called = False
     assert "dummy_result" == burndown.burndown_plot(
-        "dummy", ["foo", "bar"], baz=3, foozle=4, stackplot_function=moc_stackplot,
-        prepare_df_function=moc_prepare_df
+        "dummy",
+        ["foo", "bar"],
+        baz=3,
+        foozle=4,
+        stackplot_function=moc_stackplot,
+        prepare_df_function=moc_prepare_df,
     )
     assert stackplot_called
 
-def test_get_spanning_days():
-    result = burndown.get_spanning_days(pd.to_datetime([
-            "2022-04-12T08:00Z",
-            "2022-04-13T11:00Z",
-            "2022-04-15T13:00Z",
-            "2022-04-16T13:00Z",
-        ]))
 
-    assert result.to_list() == pd.to_datetime([
-            "2022-04-12T00:00Z",
-            "2022-04-13T00:00Z",
-            "2022-04-14T00:00Z",
-            "2022-04-15T00:00Z",
-            "2022-04-16T00:00Z",
-            "2022-04-17T00:00Z",
-        ]).to_list()
+def test_get_spanning_days():
+    result = burndown.get_spanning_days(
+        pd.to_datetime(
+            [
+                "2022-04-12T08:00Z",
+                "2022-04-13T11:00Z",
+                "2022-04-15T13:00Z",
+                "2022-04-16T13:00Z",
+            ]
+        )
+    )
+
+    assert (
+        result.to_list()
+        == pd.to_datetime(
+            [
+                "2022-04-12T00:00Z",
+                "2022-04-13T00:00Z",
+                "2022-04-14T00:00Z",
+                "2022-04-15T00:00Z",
+                "2022-04-16T00:00Z",
+                "2022-04-17T00:00Z",
+            ]
+        ).to_list()
+    )
+
 
 def test_is_weekday():
-    result = burndown.is_weekday(pd.to_datetime([
-            "2022-06-14T00:00Z",
-            "2022-06-15T00:00Z",
-            "2022-06-16T00:00Z",
-            "2022-06-17T00:00Z",
-            "2022-06-18T00:00Z",
-            "2022-06-19T00:00Z",
-            "2022-06-20T00:00Z",
-            "2022-06-21T00:00Z",
-        ]))
+    result = burndown.is_weekday(
+        pd.to_datetime(
+            [
+                "2022-06-14T00:00Z",
+                "2022-06-15T00:00Z",
+                "2022-06-16T00:00Z",
+                "2022-06-17T00:00Z",
+                "2022-06-18T00:00Z",
+                "2022-06-19T00:00Z",
+                "2022-06-20T00:00Z",
+                "2022-06-21T00:00Z",
+            ]
+        )
+    )
     assert list(result) == [
         True,
         True,
@@ -335,17 +358,20 @@ def test_is_weekday():
         False,
         True,
         True,
-        ]
+    ]
+
 
 def test_get_time_scaler():
-    spanning_days = pd.to_datetime([
+    spanning_days = pd.to_datetime(
+        [
             "2022-06-14T00:00Z",
             "2022-06-15T00:00Z",
             "2022-06-16T00:00Z",
             "2022-06-17T00:00Z",
             "2022-06-18T00:00Z",
             "2022-06-19T00:00Z",
-        ])
+        ]
+    )
     is_workday = [
         True,
         False,
@@ -353,14 +379,26 @@ def test_get_time_scaler():
         True,
         True,
         False,
-        ]
+    ]
 
-    time_scaler = burndown.get_time_scaler(spanning_days, is_workday, 1/16)
+    time_scaler = burndown.get_time_scaler(spanning_days, is_workday, 1 / 16)
 
     assert list(time_scaler(spanning_days)) == [
-        0, 1., 1 + 1/16, 1 + 2/16, 2 + 2/16, 3 + 2/16 ]
-    assert list(time_scaler(pd.to_datetime([
-            "2022-06-14T12:00Z",
-            "2022-06-15T12:00Z",
-            "2022-06-16T12:00Z",
-        ]))) == [ 0.5, 1 + 1/32, 1 + 3/32 ]
+        0,
+        1.0,
+        1 + 1 / 16,
+        1 + 2 / 16,
+        2 + 2 / 16,
+        3 + 2 / 16,
+    ]
+    assert list(
+        time_scaler(
+            pd.to_datetime(
+                [
+                    "2022-06-14T12:00Z",
+                    "2022-06-15T12:00Z",
+                    "2022-06-16T12:00Z",
+                ]
+            )
+        )
+    ) == [0.5, 1 + 1 / 32, 1 + 3 / 32]

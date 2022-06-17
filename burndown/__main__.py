@@ -35,6 +35,6 @@ if True:  # pragma: no cover
     fig = plt.figure(figsize=(10, 5))
     burndown.burndown_plot(tasks, categories, burnup=args["--burnup"])
     plt.grid(alpha=0.2)
-    plt.legend(loc='upper left')
-    plt.xticks(rotation=30, horizontalalignment='right')
+    plt.legend(loc="upper left")
+    plt.xticks(rotation=30, horizontalalignment="right")
     plt.savefig(args["--output"], bbox_inches="tight")
