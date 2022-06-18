@@ -217,15 +217,12 @@ def test_prepare_stackplot_df():
     assert result_df.equals(expected_df)
 
     # next, check the ordinary burndown case
-    # expected_y = expected_y[1:, :]
-    # expected_labels = expected_labels[1:]
-    # expected_colors = expected_colors[1:]
-
-    # stackplot_called = False
-    # assert "dummy_result" == burndown.burndown_plot(
-    #    tasks, ["foo", "bar"], baz=3, foozle=4, stackplot_func=moc_stackplot
-    # )
-    # assert stackplot_called
+    result_df = burndown.prepare_stackplot_df(
+        tasks,
+        ["foo", "bar"],
+        burnup=False,
+    )
+    assert result_df.equals(expected_df.drop("completed", axis=1))
 
 
 def test_burndown_plot():
