@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot
 from scipy.interpolate import interp1d
+import re
 
 
 def read_csv(filename: str):
@@ -120,6 +121,7 @@ def burndown_plot(
     burnup=False,
     stackplot_function=matplotlib.pyplot.stackplot,
     prepare_df_function=prepare_stackplot_df,
+    time_scaler=lambda x: x,
     **kwargs,
 ):
 
@@ -143,7 +145,7 @@ def burndown_plot(
         colors.insert(0, (0, 0, 0, 0))
 
     return stackplot_function(
-        df_result.index,
+        time_scaler(df_result.index),
         df_result.transpose(),
         labels=df_result.columns,
         colors=colors,
@@ -157,8 +159,8 @@ def get_spanning_days(dts):
     )
 
 
-def is_weekday(dts):
-    return dts.day_of_week < 5
+def is_weekend(dts):
+    return dts.day_of_week >= 5
 
 
 def get_time_scaler(spanning_days, is_workday, non_workday_value=1 / 16):
@@ -169,3 +171,17 @@ def get_time_scaler(spanning_days, is_workday, non_workday_value=1 / 16):
     f = interp1d(x, y)
 
     return lambda dts: f(dts.to_julian_date())
+
+
+def extract_holidays_from_ical(ical):
+    lines = ical.split("\n")
+    result = []
+    for line in lines:
+        m = re.match(r"DTSTART;VALUE=DATE:([0-9]{8,8})", line.strip())
+        if m:
+            result.append(m.group(1))
+    return pd.to_datetime(result, utc=True).to_list()
+
+
+def is_workday(dts, holidays):
+    return [not is_weekend(d) and not d in holidays for d in dts]

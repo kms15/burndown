@@ -5,6 +5,7 @@ import burndown
 import pandas as pd
 import pytest
 import numpy as np
+import re
 
 
 def test_read_csv():
@@ -231,7 +232,13 @@ def test_burndown_plot():
     burnup_expected = True
 
     dummy_df = pd.DataFrame(
-        {"completed": [1, 2], "x": [3, 4], "y": [5, 6]}, index=[7, 8]
+        {"completed": [1, 2], "x": [3, 4], "y": [5, 6]},
+        index=pd.to_datetime(
+            [
+                "2022-04-11T12:12Z",
+                "2022-04-13T12:13Z",
+            ]
+        ),
     )
 
     # burndown plot.
@@ -303,6 +310,21 @@ def test_burndown_plot():
     )
     assert stackplot_called
 
+    # finally, check passing a time_scaler
+    time_scaler = lambda dts: dts.to_julian_date()
+    expected_x = time_scaler(expected_x)
+    stackplot_called = False
+    assert "dummy_result" == burndown.burndown_plot(
+        "dummy",
+        ["foo", "bar"],
+        time_scaler=time_scaler,
+        baz=3,
+        foozle=4,
+        stackplot_function=moc_stackplot,
+        prepare_df_function=moc_prepare_df,
+    )
+    assert stackplot_called
+
 
 def test_get_spanning_days():
     result = burndown.get_spanning_days(
@@ -331,8 +353,8 @@ def test_get_spanning_days():
     )
 
 
-def test_is_weekday():
-    result = burndown.is_weekday(
+def test_is_weekend():
+    result = burndown.is_weekend(
         pd.to_datetime(
             [
                 "2022-06-14T00:00Z",
@@ -347,14 +369,14 @@ def test_is_weekday():
         )
     )
     assert list(result) == [
-        True,
-        True,
-        True,
-        True,
+        False,
+        False,
         False,
         False,
         True,
         True,
+        False,
+        False,
     ]
 
 
@@ -399,3 +421,89 @@ def test_get_time_scaler():
             )
         )
     ) == [0.5, 1 + 1 / 32, 1 + 3 / 32]
+
+
+def test_extract_holidays_from_ical():
+    ical = re.sub(
+        "\n\\s*",
+        "\n",
+        """BEGIN:VEVENT
+            DESCRIPTION:Task: Gen Surg\nAutoSync from QGenda: 6/20/2022 10:21AM
+            DTEND;VALUE=DATE:20220628
+            DTSTAMP:20220620T142124Z
+            DTSTART;VALUE=DATE:20220627
+            SUMMARY:GS [Shaw]
+            TRANSP:TRANSPARENT
+            UID:6330006a-b163-4da1-9f58-59954d1176a4@qgenda.com
+            X-MICROSOFT-CDO-ALLDAYEVENT:TRUE
+            X-MICROSOFT-CDO-BUSYSTATUS:FREE
+            END:VEVENT
+            BEGIN:VEVENT
+            DESCRIPTION:AutoSync from QGenda: 6/20/2022 10:21AM
+            DTEND;VALUE=DATE:20220702
+            DTSTAMP:20220620T142124Z
+            DTSTART;VALUE=DATE:20220701
+            SUMMARY:Neuro [Shaw]
+            TRANSP:TRANSPARENT
+            UID:bd18d79f-834f-4118-a116-94669dc383de@qgenda.com
+            X-MICROSOFT-CDO-ALLDAYEVENT:TRUE
+            X-MICROSOFT-CDO-BUSYSTATUS:FREE
+            END:VEVENT
+            BEGIN:VEVENT
+            DESCRIPTION:Task: Blake 12 Night\nAutoSync from QGenda: 6/20/2022 10:21AM
+            DTEND;VALUE=DATE:20220723
+            DTSTAMP:20220620T142124Z
+            DTSTART;VALUE=DATE:20220722
+            SUMMARY:B12n [Shaw]
+            TRANSP:TRANSPARENT
+            UID:2819b1d7-5e39-434c-a6a9-77ea9ee017ed@qgenda.com
+            X-MICROSOFT-CDO-ALLDAYEVENT:TRUE
+            X-MICROSOFT-CDO-BUSYSTATUS:FREE
+            END:VEVENT""",
+    )
+    assert (
+        burndown.extract_holidays_from_ical(ical)
+        == pd.to_datetime(
+            [
+                "2022-06-27T00:00Z",
+                "2022-07-01T00:00Z",
+                "2022-07-22T00:00Z",
+            ]
+        ).to_list()
+    )
+
+
+def test_is_workday():
+    holidays = pd.to_datetime(
+        [
+            "2022-06-15T00:00Z",
+            "2022-06-16T00:00Z",
+        ]
+    ).to_list()
+
+    result = burndown.is_workday(
+        pd.to_datetime(
+            [
+                "2022-06-14T00:00Z",
+                "2022-06-15T00:00Z",
+                "2022-06-16T00:00Z",
+                "2022-06-17T00:00Z",
+                "2022-06-18T00:00Z",
+                "2022-06-19T00:00Z",
+                "2022-06-20T00:00Z",
+                "2022-06-21T00:00Z",
+            ]
+        ),
+        holidays,
+    )
+
+    assert list(result) == [
+        True,
+        False,
+        False,
+        True,
+        False,
+        False,
+        True,
+        True,
+    ]
